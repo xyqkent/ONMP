@@ -1,20 +1,18 @@
 #!/bin/sh
 # @Author: xzhih
 # @Date:   2017-07-29 06:10:54
-# @Last Modified by:   Fangshing87
-# @Last Modified time: 2019-06-09 11:39:26
+# @Last Modified by:   xyqkent
+# @Last Modified time: 2020-02-29 11:39:26
 
 # 软件包列表
 pkglist="wget unzip grep sed tar ca-certificates coreutils-whoami php7 php7-cgi php7-cli php7-fastcgi php7-fpm php7-mod-mysqli php7-mod-pdo php7-mod-pdo-mysql nginx-extras mariadb-server mariadb-server-extra mariadb-client mariadb-client-extra"
 
-phpmod="php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring php7-mod-opcache php7-mod-openssl php7-mod-pcntl php7-mod-phar php7-pecl-redis php7-mod-session php7-mod-shmop php7-mod-simplexml php7-mod-snmp php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf redis snmpd snmp-mibs snmp-utils zoneinfo-core zoneinfo-asia"
+phpmod="php7-mod-calendar php7-mod-ctype php7-mod-curl php7-mod-dom php7-mod-exif php7-mod-fileinfo php7-mod-ftp php7-mod-gd php7-mod-gettext php7-mod-gmp php7-mod-hash php7-mod-iconv php7-mod-intl php7-mod-json php7-mod-ldap php7-mod-session php7-mod-mbstring php7-mod-opcache php7-mod-openssl php7-mod-pcntl php7-mod-phar php7-pecl-redis php7-mod-shmop php7-mod-simplexml php7-mod-snmp php7-mod-soap php7-mod-sockets php7-mod-sqlite3 php7-mod-sysvmsg php7-mod-sysvsem php7-mod-sysvshm php7-mod-tokenizer php7-mod-xml php7-mod-xmlreader php7-mod-xmlwriter php7-mod-zip php7-pecl-dio php7-pecl-http php7-pecl-libevent php7-pecl-propro php7-pecl-raphf php7-mod-imap php7-mod-pdo-mysql php7-pecl-mcrypt php7-fastcgi php7-mod-filter redis snmpd snmp-mibs snmp-utils zoneinfo-core zoneinfo-asia"
 
-# 后续可能增加的包(缺少源支持)
-# php7-mod-imagick imagemagick imagemagick-jpeg imagemagick-png imagemagick-tiff imagemagick-tools
 
 # Web程序
-# (1) phpMyAdmin（数据库管理工具）
-url_phpMyAdmin="https://files.phpmyadmin.net/phpMyAdmin/4.8.3/phpMyAdmin-4.8.3-all-languages.zip"
+# (1) phpMyAdmin（数据库管理工具）更新到5.01
+url_phpMyAdmin="https://files.phpmyadmin.net/phpMyAdmin/5.0.1/phpMyAdmin-5.0.1-all-languages.zip" 
 
 # (2) WordPress（使用最广泛的CMS）
 url_WordPress="https://cn.wordpress.org/wordpress-4.9.4-zh_CN.zip"
@@ -22,7 +20,7 @@ url_WordPress="https://cn.wordpress.org/wordpress-4.9.4-zh_CN.zip"
 # (3) Owncloud（经典的私有云）
 url_Owncloud="https://download.owncloud.org/community/owncloud-10.0.10.zip"
 
-# (4) Nextcloud（Owncloud团队的新作，美观强大的个人云盘）
+# (4) Nextcloud（Owncloud团队的新作，美观强大的个人云盘）（下载好慢，建议本地安装）
 url_Nextcloud="https://download.nextcloud.com/server/releases/nextcloud-13.0.6.zip"
 
 # (5) h5ai（优秀的文件目录）
@@ -230,25 +228,32 @@ OOO
 
 # nextcloud
 cat > "/opt/etc/nginx/conf/nextcloud.conf" <<-\OOO
-add_header X-Content-Type-Options nosniff;
-add_header X-XSS-Protection "1; mode=block";
-add_header X-Robots-Tag none;
-add_header X-Download-Options noopen;
-add_header X-Permitted-Cross-Domain-Policies none;
+add_header Referrer-Policy "no-referrer" always;
+add_header X-Content-Type-Options "nosniff" always;
+add_header X-Download-Options "noopen" always;
+add_header X-Frame-Options "SAMEORIGIN" always;
+add_header X-Permitted-Cross-Domain-Policies "none" always;
+add_header X-Robots-Tag "none" always;
+add_header X-XSS-Protection "1; mode=block" always;
+
+fastcgi_hide_header X-Powered-By;
 
 location = /robots.txt {
     allow all;
     log_not_found off;
     access_log off;
 }
+
 location = /.well-known/carddav {
-    return 301 $scheme://$host/remote.php/dav;
+  return 301 $scheme://$host:$server_port/remote.php/dav;
 }
 location = /.well-known/caldav {
-    return 301 $scheme://$host/remote.php/dav;
+  return 301 $scheme://$host:$server_port/remote.php/dav;
 }
 
+client_max_body_size 512M;
 fastcgi_buffers 64 4K;
+
 gzip on;
 gzip_vary on;
 gzip_comp_level 4;
@@ -257,44 +262,53 @@ gzip_proxied expired no-cache no-store private no_last_modified no_etag auth;
 gzip_types application/atom+xml application/javascript application/json application/ld+json application/manifest+json application/rss+xml application/vnd.geo+json application/vnd.ms-fontobject application/x-font-ttf application/x-web-app-manifest+json application/xhtml+xml application/xml font/opentype image/bmp image/svg+xml image/x-icon text/cache-manifest text/css text/plain text/vcard text/vnd.rim.location.xloc text/vtt text/x-component text/x-cross-domain-policy;
 
 location / {
-    rewrite ^ /index.php$request_uri;
+    rewrite ^ /index.php;
 }
-location ~ ^/(?:build|tests|config|lib|3rdparty|templates|data)/ {
+
+location ~ ^\/(?:build|tests|config|lib|3rdparty|templates|data)\/ {
     deny all;
 }
-location ~ ^/(?:\.|autotest|occ|issue|indie|db_|console) {
+location ~ ^\/(?:\.|autotest|occ|issue|indie|db_|console) {
     deny all;
 }
 
-location ~ ^/(?:index|remote|public|cron|core/ajax/update|status|ocs/v[12]|updater/.+|ocs-provider/.+)\.php(?:$|/) {
-    fastcgi_split_path_info ^(.+?\.php)(/.*)$;
+location ~ ^\/(?:index|remote|public|cron|core\/ajax\/update|status|ocs\/v[12]|updater\/.+|oc[ms]-provider\/.+)\.php(?:$|\/) {
+    fastcgi_split_path_info ^(.+?\.php)(\/.*|)$;
+    set $path_info $fastcgi_path_info;
+    try_files $fastcgi_script_name =404;
     include fastcgi_params;
     fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-    fastcgi_param PATH_INFO $fastcgi_path_info;
+    fastcgi_param PATH_INFO $path_info;
+    fastcgi_param HTTPS on;
+    # Avoid sending the security headers twice
     fastcgi_param modHeadersAvailable true;
+    # Enable pretty urls
     fastcgi_param front_controller_active true;
     fastcgi_pass unix:/opt/var/run/php7-fpm.sock;
     fastcgi_intercept_errors on;
     fastcgi_request_buffering off;
 }
 
-location ~ ^/(?:updater|ocs-provider)(?:$|/) {
+location ~ ^\/(?:updater|oc[ms]-provider)(?:$|\/) {
     try_files $uri/ =404;
     index index.php;
 }
 
-location ~ \.(?:css|js|woff|svg|gif)$ {
+location ~ \.(?:css|js|woff2?|svg|gif|map)$ {
     try_files $uri /index.php$request_uri;
-    add_header Cache-Control "public, max-age=15778463";
-    add_header X-Content-Type-Options nosniff;
-    add_header X-XSS-Protection "1; mode=block";
-    add_header X-Robots-Tag none;
-    add_header X-Download-Options noopen;
-    add_header X-Permitted-Cross-Domain-Policies none;
+    add_header Cache-Control "public, max-age=15778463";    
+    add_header Referrer-Policy "no-referrer" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Download-Options "noopen" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Permitted-Cross-Domain-Policies "none" always;
+    add_header X-Robots-Tag "none" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+
     access_log off;
 }
 
-location ~ \.(?:png|html|ttf|ico|jpg|jpeg)$ {
+location ~ \.(?:png|html|ttf|ico|jpg|jpeg|bcmap)$ {
     try_files $uri /index.php$request_uri;
     access_log off;
 }
@@ -801,6 +815,8 @@ web_installer()
     echo "----------------------------------------"
     echo "|***********  WEB程序安装器  ***********|"
     echo "----------------------------------------"
+	echo "离线安装请把安装包按照以下名字放在"
+	echo "/opt/wwwroot/目录下"
     echo "安装 $name："
 
     # 获取用户自定义设置
@@ -820,10 +836,10 @@ web_installer()
         read -p "网站目录 /opt/wwwroot/$webdir 已存在，是否删除: [y/n(小写)]" ans
         case $ans in
             y ) rm -rf /opt/wwwroot/$webdir; echo "已删除";;
-n ) echo "未删除";;
-* ) echo "没有这个选项"; exit;;
-esac
-fi
+			n ) echo "未删除";;
+			* ) echo "没有这个选项"; exit;;
+		esac
+	fi
 
     # 下载程序并解压
     suffix="zip"
