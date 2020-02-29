@@ -469,11 +469,18 @@ tmpdir             = /opt/tmp/
 skip-external-locking
 
 bind-address       = 127.0.0.1
+transaction_isolation = READ-COMMITTED
+binlog_format = ROW
+character-set-server = utf8mb4
+collation-server = utf8mb4_general_ci
 
 key_buffer_size    = 24M
 max_allowed_packet = 24M
 thread_stack       = 192K
 thread_cache_size  = 8
+
+[client]
+default-character-set = utf8mb4
 
 [mysqldump]
 quick
