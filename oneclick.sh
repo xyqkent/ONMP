@@ -24,7 +24,7 @@ ONMP 是一个 web 环境快速安装脚本，适用于安装了
 Entware 的路由器，目前已经在 Padavan、
 LEDE（openwrt）、梅林上测试成功。
 
-项目地址：https://github.com/xzhih/ONMP
+项目地址：https://github.com/xyqkent/ONMP
 
 EOF
 
